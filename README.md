@@ -23,7 +23,7 @@ Contains\
 ![Picture of note taker](./screenshots/pic1.gif)
 
 
-## Deployed at https://petemaynard.github.io/Note_Taker/
+## Deployed at https://note-taker-pjm-3740623ce2ba.herokuapp.com/notes
 
 ## Repository at https://github.com/petemaynard/Note_Taker
 
