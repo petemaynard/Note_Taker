@@ -1,10 +1,10 @@
-// This is from Module 11, Lesson 20, before the use or Router().
-
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-// Helper method for generating unique ids
+// Helper function to generate unique ids
+const uuid = require('./helpers/uuid');
 
+const notesData = require('./db/db.json')
 const PORT = 3001;
 
 const app = express();
@@ -14,73 +14,79 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static('public'));
 
-// This looks right
-app.get('/', (req, res) =>
-  res.sendFile(path.join(__dirname, '/public/index.html'))
+
+
+// GET /notes should return the notes.html file  DONE
+app.get('/notes', (req, res) => {
+   // Send a message to the client
+   res.sendFile(path.join(__dirname, '/public/notes.html'))
+});
+
+
+// GET /api/notes should read the db.json file and return all saved notes as json  DONE
+app.get('/api/notes', (req, res) => res.json(notesData));
+// Send a message to the client
+
+
+
+// Should return the index.html file  DONE
+app.get('*', (req, res) =>
+   res.sendFile(path.join(__dirname, '/public/index.html'))
 );
 
-// GET request for reviews
-app.get('/api/reviews', (req, res) => {
-  // Send a message to the client
-  res.status(200).json(`${req.method} request received to get reviews`);
 
-  // Log our request to the terminal
-  console.info(`${req.method} request received to get reviews`);
-});
+// POST request to add a note
+app.post('/api/notes', async (req, res) => {
+   // Log that a POST request was received
+   console.info(`${req.method} request received to add a note`);
 
-// POST request to add a review
-app.post('/api/reviews', (req, res) => {
-  // Log that a POST request was received
-  console.info(`${req.method} request received to add a review`);
+   const { title, text } = req.body;  // This is saveNote, line 36 index.js
 
-  // Destructuring assignment for the items in req.body
-  const { product, review, username } = req.body;
-
-  // If all the required properties are present
-  if (product && review && username) {
-    // Variable for the object we will save
-    const newReview = {
-      product,
-      review,
-      username,
-      review_id: uuid(),
-    };
-
-    // Obtain existing reviews
-    fs.readFile('./db/reviews.json', 'utf8', (err, data) => {
-      if (err) {
-        console.error(err);
-      } else {
-        // Convert string into JSON object
-        const parsedReviews = JSON.parse(data);
-
-        // Add a new review
-        parsedReviews.push(newReview);
-
-        // Write updated reviews back to the file
-        fs.writeFile(
-          './db/reviews.json',
-          JSON.stringify(parsedReviews, null, 4),
-          (writeErr) =>
-            writeErr
-              ? console.error(writeErr)
-              : console.info('Successfully updated reviews!')
-        );
+   if (title && text) {
+      // Object we will save
+      const newNote = {
+         title,
+         text,
+         id: uuid()
       }
-    });
 
-    const response = {
-      status: 'success',
-      body: newReview,
-    };
+      // Read from the db/db.json file
+      fs.readFile('./db/db.json', 'utf8', (err, data) => {
+         if (err) {
+            console.error(err);
+            res.status(500).json('Error in reading notes');
+            return;
+         } else {
+            // Convert input file to JSON object
+            const parsedNotes = JSON.parse(data);
+            // Add new note to array
+            parsedNotes.push(newNote);
+            // Write the parsedNotes (the newNote) to notesData (db/db.json)
+            fs.writeFile('./db/db.json', JSON.stringify(parsedNotes, null, 3),
+               (writeErr) =>
+                  writeErr
+                     ? console.error(writeErr)
+                     : console.info('Successfully updated reviews!')
+            );
+         }
+      });
 
-    console.log(response);
-    res.status(201).json(response);
-  } else {
-    res.status(500).json('Error in posting review');
-  }
+      const response = {
+         status: 'success',
+         body: newNote,
+      };
+      // Update the notesData array
+      notesData.push(newNote);
+      console.log(response);
+      res.status(201).json(response);
+   } else {
+      res.status(500).json('Error in posting review');
+
+   }
+
 });
+
 
 app.listen(PORT, () =>
-  console.log(`App listening at http://localhost:${PORT}`)
+   console.log(`App listening at http://localhost:${PORT}`)
 );
